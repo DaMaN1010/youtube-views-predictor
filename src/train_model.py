@@ -17,15 +17,35 @@ def load_data(path):
         print(f"❌ Error loading dataset: {e}")
         exit()
 
-
 def preprocess_data(df):
     """
-    Basic preprocessing:
-    - Select relevant features
-    - Handle missing values
+    Feature engineering from raw YouTube dataset.
     """
 
-    # Select features (adjust if dataset columns differ)
+    # -----------------------------
+    # 1. Convert publish_time to datetime
+    # -----------------------------
+    df['publish_time'] = pd.to_datetime(df['publish_time'], errors='coerce')
+
+    # Extract time-based features
+    df['publish_hour'] = df['publish_time'].dt.hour
+    df['publish_day'] = df['publish_time'].dt.day
+    df['publish_month'] = df['publish_time'].dt.month
+
+    # -----------------------------
+    # 2. Title features
+    # -----------------------------
+    df['title_length'] = df['title'].astype(str).apply(len)
+    df['title_word_count'] = df['title'].astype(str).apply(lambda x: len(x.split()))
+
+    # -----------------------------
+    # 3. Tags feature
+    # -----------------------------
+    df['num_tags'] = df['tags'].astype(str).apply(lambda x: len(x.split('|')))
+
+    # -----------------------------
+    # 4. Select features
+    # -----------------------------
     features = [
         'category_id',
         'publish_hour',
@@ -36,22 +56,17 @@ def preprocess_data(df):
         'num_tags'
     ]
 
-    target = 'views'  # Change if your dataset uses a different target
+    target = 'views'
 
-    # Check if required columns exist
-    for col in features + [target]:
-        if col not in df.columns:
-            print(f"❌ Missing column: {col}")
-            exit()
-
-    # Drop missing values
+    # -----------------------------
+    # 5. Clean data
+    # -----------------------------
     df = df[features + [target]].dropna()
 
     X = df[features]
     y = df[target]
 
     return X, y
-
 
 def train_model(X_train, y_train):
     """

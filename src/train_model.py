@@ -1,87 +1,159 @@
+import os
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
-# Import our custom functions
-from data_preprocessing import load_data, preprocess_data
-from feature_engineering import create_features
 
-# -------------------------------
-# 1. Load and prepare the data
-# -------------------------------
+def load_data(path):
+    """
+    Load dataset from a CSV file.
+    """
+    try:
+        df = pd.read_csv(path)
+        print(f"✅ Loaded dataset: {path}")
+        return df
+    except Exception as e:
+        print(f"❌ Error loading dataset: {e}")
+        exit()
 
-# Load dataset
-df = load_data("data/youtube_data.csv")
 
-# Clean data
-df = preprocess_data(df)
+def preprocess_data(df):
+    """
+    Basic preprocessing:
+    - Select relevant features
+    - Handle missing values
+    """
 
-# Create new features
-df = create_features(df)
+    # Select features (adjust if dataset columns differ)
+    features = [
+        'category_id',
+        'publish_hour',
+        'publish_day',
+        'publish_month',
+        'title_length',
+        'title_word_count',
+        'num_tags'
+    ]
 
-# -------------------------------
-# 2. Sort data by time 
-# -------------------------------
-# This avoids data leakage
-# We simulate real-world prediction (past -> future)
-df = df.sort_values(by='publish_time')
+    target = 'views'  # Change if your dataset uses a different target
 
-# -------------------------------
-# 3. Select features
-# -------------------------------
-features = [
-    'category_id',
-    'publish_hour',
-    'publish_day',
-    'publish_month',
-    'title_length',
-    'title_word_count',
-    'num_tags'
-]
+    # Check if required columns exist
+    for col in features + [target]:
+        if col not in df.columns:
+            print(f"❌ Missing column: {col}")
+            exit()
 
-X = df[features]
-y = df['log_views']
+    # Drop missing values
+    df = df[features + [target]].dropna()
 
-# -------------------------------
-# 4. Time-based split
-# -------------------------------
-# Use first 80% for training, last 20% for testing
-split_index = int(len(df) * 0.8)
+    X = df[features]
+    y = df[target]
 
-X_train = X.iloc[:split_index]
-X_test = X.iloc[split_index:]
+    return X, y
 
-y_train = y.iloc[:split_index]
-y_test = y.iloc[split_index:]
 
-# -------------------------------
-# 5. Train model
-# -------------------------------
-model = RandomForestRegressor(
-    n_estimators=100,
-    random_state=42
-)
+def train_model(X_train, y_train):
+    """
+    Train Random Forest model.
+    """
 
-model.fit(X_train, y_train)
+    model = RandomForestRegressor(
+        n_estimators=100,
+        random_state=42
+    )
 
-# -------------------------------
-# 6. Make predictions
-# -------------------------------
-y_pred = model.predict(X_test)
+    model.fit(X_train, y_train)
+    print("✅ Model training completed")
 
-# -------------------------------
-# 7. Evaluate model
-# -------------------------------
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
+    return model
 
-print("Model Performance:")
-print("MSE:", mse)
-print("R2:", r2)
 
-# -------------------------------
-# 8. Final Insight
-# -------------------------------
-# If R2 is low or negative:
-# → Model cannot predict future views well
-# → Features are not strong enough
+def evaluate_model(model, X_test, y_test):
+    """
+    Evaluate model performance.
+    """
+
+    y_pred = model.predict(X_test)
+
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+
+    print("\n📊 Model Performance:")
+    print(f"MSE: {mse}")
+    print(f"R2 Score: {r2}")
+
+    return y_pred
+
+
+def show_feature_importance(model, feature_names):
+    """
+    Display feature importance scores.
+    """
+
+    importance = pd.Series(model.feature_importances_, index=feature_names)
+    importance = importance.sort_values(ascending=False)
+
+    print("\n🔥 Feature Importance:")
+    print(importance)
+
+
+def find_dataset():
+    """
+    Automatically find a CSV file inside the data folder.
+    """
+
+    if not os.path.exists("data"):
+        print("❌ 'data/' folder not found. Run download_data.py first.")
+        exit()
+
+    csv_files = [f for f in os.listdir("data") if f.endswith(".csv")]
+
+    if not csv_files:
+        print("❌ No CSV files found in 'data/' folder.")
+        exit()
+
+    # Take the first CSV file found
+    data_path = os.path.join("data", csv_files[0])
+
+    return data_path
+
+
+def main():
+    """
+    Main pipeline:
+    - Find dataset
+    - Load data
+    - Preprocess
+    - Train model
+    - Evaluate
+    """
+
+    print("🚀 Starting ML pipeline...\n")
+
+    # Step 1: Find dataset automatically
+    data_path = find_dataset()
+
+    # Step 2: Load dataset
+    df = load_data(data_path)
+
+    # Step 3: Preprocess data
+    X, y = preprocess_data(df)
+
+    # Step 4: Train/test split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    # Step 5: Train model
+    model = train_model(X_train, y_train)
+
+    # Step 6: Evaluate model
+    evaluate_model(model, X_test, y_test)
+
+    # Step 7: Feature importance
+    show_feature_importance(model, X.columns)
+
+
+if __name__ == "__main__":
+    main()

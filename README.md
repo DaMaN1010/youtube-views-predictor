@@ -29,16 +29,19 @@ After fixing the split to respect time order:
 
 This highlights the importance of avoiding data leakage in machine learning.
 
+## ▶️ How to Run This Project
 
-## 📥 Dataset
-
-The dataset is not included in this repository due to size limitations.
-
-To download it automatically, run:
-
+1. Install dependencies:
 ```bash
 pip install -r requirements.txt
+
+
+2. Download dataset:
 python src/download_data.py
+
+3. Train model:
+python src/train_model.py
+
 
 Dataset source:
 https://www.kaggle.com/datasets/abdeltawabali/usvideos-csv 

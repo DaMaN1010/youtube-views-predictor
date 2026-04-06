@@ -28,3 +28,17 @@ After fixing the split to respect time order:
 → R² dropped below 0
 
 This highlights the importance of avoiding data leakage in machine learning.
+
+
+## 📥 Dataset
+
+The dataset is not included in this repository due to size limitations.
+
+To download it automatically, run:
+
+```bash
+pip install -r requirements.txt
+python src/download_data.py
+
+Dataset source:
+https://www.kaggle.com/datasets/abdeltawabali/usvideos-csv 

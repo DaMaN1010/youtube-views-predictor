@@ -20,3 +20,11 @@ After proper time-based validation, the model fails to generalize (R² < 0), sho
 - Pandas
 - Scikit-learn
 
+## ❗ Important Finding
+
+The model initially achieved high accuracy (R² ≈ 0.90) due to improper random splitting.
+
+After fixing the split to respect time order:
+→ R² dropped below 0
+
+This highlights the importance of avoiding data leakage in machine learning.
